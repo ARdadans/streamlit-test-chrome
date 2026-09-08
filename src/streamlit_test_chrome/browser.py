@@ -12,8 +12,7 @@ logger = logging.getLogger(__name__)
 def setup_linux_env() -> None:
     """
     Configures LD_LIBRARY_PATH to include the bundled Linux shared libraries
-    (such as libglib-2.0.so.0 and libpcre2-8.so.0) so that Chromium can launch
-    without requiring packages.txt or root apt-get permissions.
+    so that Chromium can launch without requiring packages.txt or root apt-get permissions.
     """
     if sys.platform.startswith("linux"):
         libs_dir = Path(__file__).resolve().parent / "libs"
@@ -23,6 +22,10 @@ def setup_linux_env() -> None:
             if libs_str not in current_ld:
                 os.environ["LD_LIBRARY_PATH"] = f"{libs_str}:{current_ld}".rstrip(":")
                 logger.info(f"Updated LD_LIBRARY_PATH: {os.environ['LD_LIBRARY_PATH']}")
+
+
+# Run at module import time
+setup_linux_env()
 
 
 def ensure_linux_browser() -> str:
@@ -74,7 +77,10 @@ def get_browser_launch_config() -> Dict[str, Any]:
             "--no-first-run",
             "--no-zygote",
         ]
-        config: Dict[str, Any] = {"args": linux_args}
+        config: Dict[str, Any] = {
+            "args": linux_args,
+            "env": dict(os.environ),
+        }
         if executable:
             config["executable_path"] = executable
         return config

@@ -6,7 +6,9 @@ import streamlit as st
 
 # Ensure local package can be imported
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
-from streamlit_test_chrome.browser import capture_page_screenshot, get_browser_launch_config
+from streamlit_test_chrome.browser import capture_page_screenshot, get_browser_launch_config, setup_linux_env
+
+setup_linux_env()
 
 # Page configuration
 st.set_page_config(
