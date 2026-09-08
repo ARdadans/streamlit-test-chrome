@@ -2,18 +2,36 @@ import os
 import sys
 import subprocess
 import logging
+from pathlib import Path
 from typing import Dict, Any, Tuple
 from patchright.sync_api import sync_playwright
 
 logger = logging.getLogger(__name__)
 
 
+def setup_linux_env() -> None:
+    """
+    Configures LD_LIBRARY_PATH to include the bundled Linux shared libraries
+    (such as libglib-2.0.so.0 and libpcre2-8.so.0) so that Chromium can launch
+    without requiring packages.txt or root apt-get permissions.
+    """
+    if sys.platform.startswith("linux"):
+        libs_dir = Path(__file__).resolve().parent / "libs"
+        if libs_dir.exists():
+            libs_str = str(libs_dir)
+            current_ld = os.environ.get("LD_LIBRARY_PATH", "")
+            if libs_str not in current_ld:
+                os.environ["LD_LIBRARY_PATH"] = f"{libs_str}:{current_ld}".rstrip(":")
+                logger.info(f"Updated LD_LIBRARY_PATH: {os.environ['LD_LIBRARY_PATH']}")
+
+
 def ensure_linux_browser() -> str:
     """
     Ensures a working Chromium browser is available on Linux (Streamlit Cloud).
-    Checks for system-installed binaries first. If none are found, installs
-    Patchright's self-contained Chromium via Python without requiring apt or root.
+    Installs Patchright's self-contained Chromium via Python if not already present.
     """
+    setup_linux_env()
+
     candidate_paths = [
         "/usr/bin/chromium",
         "/usr/bin/chromium-browser",
@@ -41,11 +59,12 @@ def get_browser_launch_config() -> Dict[str, Any]:
     """
     Returns the launch configuration for Patchright:
     - Windows / macOS (local dev): Uses locally installed Chrome (channel='chrome', zero download).
-    - Linux (Streamlit Cloud): Uses system Chromium or Patchright's self-contained browser.
+    - Linux (Streamlit Cloud): Uses bundled libraries + container-compatible flags.
     """
     is_linux = sys.platform.startswith("linux")
 
     if is_linux:
+        setup_linux_env()
         executable = ensure_linux_browser()
         linux_args = [
             "--no-sandbox",
@@ -80,6 +99,7 @@ def capture_page_screenshot(
     Returns:
         (page_title, browser_info, screenshot_bytes)
     """
+    setup_linux_env()
     config = get_browser_launch_config()
     config["headless"] = headless
 
