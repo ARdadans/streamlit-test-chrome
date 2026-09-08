@@ -15,6 +15,7 @@ def setup_linux_env() -> None:
     so that Chromium can launch without requiring packages.txt or root apt-get permissions.
     """
     if sys.platform.startswith("linux"):
+        os.environ["NO_AT_BRIDGE"] = "1"
         libs_dir = Path(__file__).resolve().parent / "libs"
         if libs_dir.exists():
             libs_str = str(libs_dir)
@@ -76,6 +77,7 @@ def get_browser_launch_config() -> Dict[str, Any]:
             "--disable-gpu",
             "--no-first-run",
             "--no-zygote",
+            "--disable-renderer-accessibility",
         ]
         config: Dict[str, Any] = {
             "args": linux_args,
