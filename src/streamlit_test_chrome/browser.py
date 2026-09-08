@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 
 def ensure_linux_browser() -> str:
     """
-    Checks for available Chromium binaries on Linux (Streamlit Cloud).
-    If system chromium from packages.txt is not found, automatically
-    runs 'patchright install chromium' as a fail-safe.
+    Ensures a working Chromium browser is available on Linux (Streamlit Cloud).
+    Checks for system-installed binaries first. If none are found, installs
+    Patchright's self-contained Chromium via Python without requiring apt or root.
     """
     candidate_paths = [
         "/usr/bin/chromium",
@@ -24,12 +24,13 @@ def ensure_linux_browser() -> str:
         if os.path.exists(path) and os.access(path, os.X_OK):
             return path
 
-    # If system chromium is not found, ensure patchright chromium is installed
+    # Auto-install Patchright Chromium without apt-get
     try:
         subprocess.run(
             [sys.executable, "-m", "patchright", "install", "chromium"],
             check=True,
             capture_output=True,
+            text=True,
         )
     except Exception as e:
         logger.warning(f"Could not run patchright install chromium: {e}")
@@ -39,8 +40,8 @@ def ensure_linux_browser() -> str:
 def get_browser_launch_config() -> Dict[str, Any]:
     """
     Returns the launch configuration for Patchright:
-    - Windows / macOS (local dev): Uses locally installed Chrome (zero extra downloads).
-    - Linux (Streamlit Cloud): Uses system Chromium or container-compatible args.
+    - Windows / macOS (local dev): Uses locally installed Chrome (channel='chrome', zero download).
+    - Linux (Streamlit Cloud): Uses system Chromium or Patchright's self-contained browser.
     """
     is_linux = sys.platform.startswith("linux")
 
@@ -59,8 +60,7 @@ def get_browser_launch_config() -> Dict[str, Any]:
             config["executable_path"] = executable
         return config
     else:
-        # Local Development (Windows/macOS)
-        # Uses local Google Chrome
+        # Local Development (Windows / macOS)
         return {
             "channel": "chrome",
         }
@@ -86,7 +86,7 @@ def capture_page_screenshot(
     with sync_playwright() as p:
         try:
             browser = p.chromium.launch(**config)
-            browser_info = config.get("executable_path") or f"channel: {config.get('channel', 'bundled/system')}"
+            browser_info = config.get("executable_path") or f"channel: {config.get('channel', 'patchright-chromium')}"
         except Exception as err:
             # Fallback for local Windows if Chrome channel isn't registered: try Edge
             if not sys.platform.startswith("linux"):

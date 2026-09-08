@@ -47,7 +47,7 @@ st.markdown(
 is_linux = sys.platform.startswith("linux")
 env_name = "Linux (Streamlit Cloud / Docker)" if is_linux else f"Local Dev ({sys.platform})"
 browser_strategy = (
-    "Chromium System (/usr/bin/chromium)" if is_linux else "Google Chrome Lokal (channel='chrome')"
+    "Patchright Chromium (Auto-installed)" if is_linux else "Google Chrome Lokal (channel='chrome')"
 )
 
 # Sidebar
@@ -194,7 +194,8 @@ with st.expander("☁️ Informasi Kompatibilitas Streamlit Cloud"):
     st.markdown("""
     **Proyek ini telah dikonfigurasi 100% kompatibel dengan Streamlit Cloud:**
     
-    1. **File `packages.txt`:** Telah dibuat berisi `chromium` dan `chromium-driver`. Saat dideploy ke `share.streamlit.io`, cloud akan otomatis memasang Chromium via `apt`.
-    2. **Local Development (Windows):** Menggunakan Google Chrome yang sudah terpasang di komputer Anda (`channel="chrome"`), tanpa mendownload binary browser baru yang berat.
-    3. **Anti-Detection Patchright:** Otomatis melewati proteksi bot dan Cloudflare secara *out-of-the-box*.
+    1. **Bebas Error APT:** Tidak menggunakan `packages.txt` sehingga terhindar dari error repository Debian yang expired di Streamlit Cloud.
+    2. **Self-Contained Chromium:** Di Streamlit Cloud (Linux), browser Chromium diunduh secara mandiri oleh Patchright ke direktori cache user via Python tanpa butuh akses root/apt.
+    3. **Local Development (Windows):** Tetap menggunakan Google Chrome lokal (`channel="chrome"`) tanpa download tambahan.
+    4. **Anti-Detection:** Menembus proteksi Cloudflare dan bot detection secara *out-of-the-box*.
     """)
